@@ -56,8 +56,47 @@ ExceptionHandler(ExceptionType which)
     if ((which == SyscallException) && (type == SC_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
-    } else {
+    } 
+    else if(which==PageFaultException){
+        if(machine->tlb!=NULL){
+            TLBMissHandler();
+        }
+    }
+    else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
+    }
+}
+
+void
+TLBMissHandler()
+{
+    int addr=machine->ReadRegister(BadVAddrReg);
+    unsigned int vpn,offset;
+    int i;
+    TranslationEntry *entry;
+    vpn=(unsigned)addr / PageSize;
+    offset=(unsigned)addr % PageSize;
+    //finding in pagetable
+    if(vpn>=pageTableSize){
+        DEBUG('a',"virtual page # %d too large for page table size %d!\n",
+                addr,pageTableSize);
+        return AddressErrorException;
+    }
+    else if(!pageTable[vpn].valid){
+        DEBUG('a',"virtual page %d not in page table!\n",addr);
+        return PageFaultException;
+    }
+    else entry=&pageTable[vpn];
+    for(i=0;i<TLBSize;i++){
+        if(!machine->tlb[i].valid)
+        {
+            machine->tlb[i]=entry;
+            break;
+        }
+    }
+    if(i==TLBSize){
+       int k=Random()%TLBSize;
+       machine->tlb[k]=entry;
     }
 }
