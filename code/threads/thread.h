@@ -111,6 +111,7 @@ class Thread {
     int getTotaltime(){ return this->total_time;   }
     void advanceTime();
     void addTime();
+    int used_time;
   private:
     // some of the private data for this class is listed above
     
@@ -125,7 +126,6 @@ class Thread {
 					// Used internally by Fork()
     unsigned int Tid,Uid;  //pthread ID and User ID
     int prio;       //priority in scheduling, 0-15, 0 is highest
-    int used_time;    //recording used time slice of threads
     int total_time;    //recording all time used
 
 #ifdef USER_PROGRAM

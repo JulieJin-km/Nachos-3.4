@@ -19,30 +19,46 @@
 // 	Run a user program.  Open the executable, load it into
 //	memory, and jump to it.
 //----------------------------------------------------------------------
-
+void ForkThread(int which)
+{
+    printf("start %d thread\n",which);
+    machine->Run();
+}
 void
 StartProcess(char *filename)
 {
     OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
-
+    //OpenFile *executable2=fileSystem->Open(filename);
+    //AddrSpace *space2;
+    //Thread*thread=Thread::cap_Thread("second thread");
     if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
+    printf("initial first thread address space\n");
     space = new AddrSpace(executable);    
+    //printf("initial second thread address space\n");
+    //space2=new AddrSpace(executable);
     currentThread->space = space;
 
+    //delete executable2;
+    //space2->InitRegisters();
+    //space2->RestoreState();
+    //thread->space=space2;
+    //thread->Fork(ForkThread,2);
+    //currentThread->Yield();
     delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
-
+    printf("start first thread\n");
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits
 					// by doing the syscall "exit"
 }
+
 
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.

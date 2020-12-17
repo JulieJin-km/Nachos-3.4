@@ -178,10 +178,15 @@ class Machine {
 
     TranslationEntry *tlb;		// this pointer should be considered 
 					// "read-only" to Nachos kernel code
-
+    int *counts;    // used for LRU
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
-
+    int total;
+    int hit;
+    int miss;
+    int bitmap[32];
+    int find();
+    void clear();
   private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction

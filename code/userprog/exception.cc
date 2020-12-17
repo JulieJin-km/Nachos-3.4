@@ -47,7 +47,8 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
+void TLBMissHandler();
+void PageMissHandler();
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -55,12 +56,30 @@ ExceptionHandler(ExceptionType which)
 
     if ((which == SyscallException) && (type == SC_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
+    printf("hit-rate %.3f,miss-rate %.3f\n",(double)machine->hit/machine->total,(double)machine->miss/machine->total);
    	interrupt->Halt();
     } 
     else if(which==PageFaultException){
         if(machine->tlb!=NULL){
             TLBMissHandler();
         }
+        else{
+            PageMissHandler();
+        }
+    }
+    else if((which==SyscallException)&&(type==SC_Exit)){
+        printf("program exit\n");
+        
+        int NextPC=machine->ReadRegister(NextPCReg);
+        machine->WriteRegister(PCReg,NextPC);
+        for(int i=0;i<machine->pageTableSize;i++){
+            printf("physical page %d:",i);
+            if(machine->pageTable[i].valid){
+                printf("page used, virtual page %d\n",machine->pageTable[i].virtualPage);
+            }
+            else printf("page unused\n");
+        }
+        machine->clear();
     }
     else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
@@ -73,30 +92,98 @@ TLBMissHandler()
 {
     int addr=machine->ReadRegister(BadVAddrReg);
     unsigned int vpn,offset;
-    int i;
-    TranslationEntry *entry;
+    int i=-1;
     vpn=(unsigned)addr / PageSize;
     offset=(unsigned)addr % PageSize;
-    //finding in pagetable
-    if(vpn>=pageTableSize){
-        DEBUG('a',"virtual page # %d too large for page table size %d!\n",
-                addr,pageTableSize);
-        return AddressErrorException;
-    }
-    else if(!pageTable[vpn].valid){
-        DEBUG('a',"virtual page %d not in page table!\n",addr);
-        return PageFaultException;
-    }
-    else entry=&pageTable[vpn];
-    for(i=0;i<TLBSize;i++){
-        if(!machine->tlb[i].valid)
+    //finding in pagetable  
+    for(int j=0;j<TLBSize;j++){
+        if(!machine->tlb[j].valid)
         {
-            machine->tlb[i]=entry;
+            i=j;
+            //printf("in find %d\n",i);
             break;
         }
     }
-    if(i==TLBSize){
-       int k=Random()%TLBSize;
-       machine->tlb[k]=entry;
+    if(i==-1)
+    {
+        for(int j=0;j<TLBSize;j++)
+            if(machine->counts[j]==TLBSize){
+                i=j;
+                //printf("in replace %d",i);
+                break;
+            }
     }
+    //for(int j=0;j<TLBSize;j++)
+        //printf("%d ",machine->counts[j]);
+    //printf("\n");
+    machine->counts[i]=1;
+    for(int j=0;j<TLBSize;j++){
+        if(j==i)continue;
+        if(machine->counts[j]==0)continue;
+        machine->counts[j]++;
+    }
+    //for(int j=0;j<TLBSize;j++)
+        //printf("%d ",machine->counts[j]);
+    //printf("\n");
+    /*
+    if(i==-1)
+    {
+        i=TLBSize-1;
+        for(int j=0;j<TLBSize-1;j++)
+            machine->tlb[j]=machine->tlb[j+1];
+    }*/
+    //if(!machine->pageTable[vpn].valid)
+    //{
+       // PageMissHandler();
+    //}
+    int corr=-1;
+    while(corr==-1){
+    for(int j=0;j<machine->pageTableSize;j++){
+        if(machine->pageTable[j].virtualPage==vpn)
+        {
+            corr=j;
+            if(machine->pageTable[j].valid==false)
+                PageMissHandler();
+            break;
+        }
+    }
+    if(corr==-1)PageMissHandler();
+    }
+    machine->tlb[i].valid=true;
+    machine->tlb[i].virtualPage=vpn;
+    machine->tlb[i].physicalPage=machine->pageTable[corr].physicalPage;
+    machine->tlb[i].use=false;
+    machine->tlb[i].dirty=false;
+    machine->tlb[i].readOnly=false;
+}
+
+void 
+PageMissHandler()
+{
+    OpenFile *openfile=fileSystem->Open("swapping_area");
+    if(openfile==NULL)ASSERT(false);
+    int addr=machine->ReadRegister(BadVAddrReg);
+    unsigned int vpn;
+    vpn=(unsigned)addr/PageSize;
+    int empty=machine->find();
+    if(empty==-1){
+        empty=0;
+        for(int j=0;j<machine->pageTableSize;j++){
+            if(machine->pageTable[j].physicalPage==0){
+                if(machine->pageTable[j].dirty==true){
+                    openfile->WriteAt(&(machine->mainMemory[empty*PageSize]),PageSize,machine->pageTable[j].virtualPage*PageSize);
+                    machine->pageTable[j].valid=false;
+                    break;
+                }
+            }
+        }
+    }
+    printf("page fault vpn %d chooses %d\n",vpn,empty);
+    openfile->ReadAt(&(machine->mainMemory[empty*PageSize]),PageSize,vpn*PageSize);
+    machine->pageTable[empty].valid=true;
+    machine->pageTable[empty].virtualPage=vpn;
+    machine->pageTable[empty].use=false;
+    machine->pageTable[empty].dirty=false;
+    machine->pageTable[empty].readOnly=false;
+    delete openfile;
 }

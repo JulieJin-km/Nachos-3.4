@@ -62,15 +62,26 @@ Machine::Machine(bool debug)
     for (i = 0; i < MemorySize; i++)
       	mainMemory[i] = 0;
 #ifdef USE_TLB
+    printf("new tlb\n");
     tlb = new TranslationEntry[TLBSize];
     for (i = 0; i < TLBSize; i++)
-	tlb[i].valid = FALSE;
+	     tlb[i].valid = FALSE;
+    counts=new int[TLBSize];
+    for(i=0;i<TLBSize;i++)
+        counts[i]=0;
+
     pageTable = NULL;
+    ASSERT(tlb==NULL||pageTable==NULL);
+    total=0;
+    hit=0;
+    miss=0;
 #else	// use linear page table
+    printf("no tlb\n");
     tlb = NULL;
     pageTable = NULL;
 #endif
-
+    for(i=0;i<32;i++)
+        bitmap[i]=0;
     singleStep = debug;
     CheckEndian();
 }
@@ -212,3 +223,28 @@ void Machine::WriteRegister(int num, int value)
 	registers[num] = value;
     }
 
+int
+Machine::find()
+{
+    for(int i=0;i<32;i++)
+    {
+        if(bitmap[i]==0){
+            bitmap[i]=1;
+            printf("allocate %d\n",i);
+            return i;
+        }
+    }
+    return -1;
+}
+
+void
+Machine::clear()
+{
+    for(int i=0;i<pageTableSize;i++){
+        int nows=pageTable[i].physicalPage;
+        if(bitmap[nows]==1){
+            printf("clear %d\n",nows);
+            bitmap[nows]=0;
+        }
+    }
+}
