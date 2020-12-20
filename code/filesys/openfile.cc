@@ -32,6 +32,8 @@ OpenFile::OpenFile(int sector)
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
+    hdr->mysector=sector;
+    //hdr->set_time_create();
 }
 
 //----------------------------------------------------------------------
@@ -119,6 +121,8 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
+    hdr->set_time_last_visited();
+    hdr->WriteBack(hdr->mysector);
 
     if ((numBytes <= 0) || (position >= fileLength))
     	return 0; 				// check request
@@ -150,6 +154,10 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     int i, firstSector, lastSector, numSectors;
     bool firstAligned, lastAligned;
     char *buf;
+
+    hdr->set_time_last_visited();
+    hdr->set_time_last_modified();
+    hdr->WriteBack(hdr->mysector);
 
     if ((numBytes <= 0) || (position >= fileLength))
 	return 0;				// check request

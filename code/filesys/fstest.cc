@@ -67,6 +67,7 @@ Copy(char *from, char *to)
 // Close the UNIX and the Nachos files
     delete openFile;
     fclose(fp);
+    //fileSystem->Print();
 }
 
 //----------------------------------------------------------------------
@@ -93,6 +94,7 @@ Print(char *name)
     delete [] buffer;
 
     delete openFile;		// close the Nachos file
+    //fileSystem->Print();
     return;
 }
 

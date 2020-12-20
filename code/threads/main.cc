@@ -88,9 +88,11 @@ main(int argc, char **argv)
     (void) Initialize(argc, argv);
     
 #ifdef THREADS
-    for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
+    int temp_argc=argc;
+    char **temp_argv=argv;
+    for (temp_argc--, temp_argv++; temp_argc > 0; temp_argc -= argCount, temp_argv += argCount) {
       argCount = 1;
-      switch (argv[0][1]) {
+      switch (temp_argv[0][1]) {
       case 'q':
         testnum = atoi(argv[1]);
         argCount++;
@@ -104,7 +106,7 @@ main(int argc, char **argv)
       }
     }
 
-    ThreadTest();
+    //ThreadTest();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
