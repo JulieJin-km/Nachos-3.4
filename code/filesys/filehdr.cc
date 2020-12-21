@@ -258,3 +258,40 @@ FileHeader::set_time_last_modified()
     strncpy(time_last_modified,asctime(gmtime(&nows)),25);
     time_last_modified[24]='\0';
 }
+
+bool
+FileHeader::Extend(BitMap *freeMap,int bytes)
+{
+    numBytes=numBytes+bytes;
+    int initial_sector=numSectors;
+    numSectors=divRoundUp(numBytes,SectorSize);
+    if(initial_sector==numSectors)
+        return TRUE;
+    if(freeMap->NumClear()<numSectors-initial_sector)
+        return FALSE;
+    printf("extend %d sectors\n",numSectors-initial_sector);
+    if(initial_sector<=NumDirect-1){
+        if(numSectors<=NumDirect-1){
+            for(int i=initial_sector;i<numSectors;i++)
+                dataSectors[i]=freeMap->Find();
+        }
+        else{
+            for(int i=initial_sector;i<NumDirect-1;i++)
+                dataSectors[i]=freeMap->Find();
+            dataSectors[NumDirect-1]=freeMap->Find();
+            int indirectDataSectors[NumIndirect];
+            for(int i=0;i<numSectors-NumDirect+1;i++)
+                indirectDataSectors[i]=freeMap->Find();
+            synchDisk->WriteSector(dataSectors[NumDirect-1],(char*)indirectDataSectors);
+        }
+    }
+    else{
+        char* indirectDataSectors=new char[SectorSize];
+        synchDisk->ReadSector(dataSectors[NumDirect-1],indirectDataSectors);
+        for(int i=initial_sector;i<numSectors;i++)
+            ((int*)indirectDataSectors)[i-NumDirect+1]=freeMap->Find();
+        synchDisk->WriteSector(dataSectors[NumDirect-1],indirectDataSectors);
+    }
+    return TRUE;
+
+}

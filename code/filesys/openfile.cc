@@ -159,13 +159,25 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     hdr->set_time_last_modified();
     hdr->WriteBack(hdr->mysector);
 
-    if ((numBytes <= 0) || (position >= fileLength))
-	return 0;				// check request
-    if ((position + numBytes) > fileLength)
-	numBytes = fileLength - position;
+    if (numBytes <= 0)
+	    return 0;				// check request
+    if ((position + numBytes) > fileLength){
+        OpenFile*freeMapFile=new OpenFile(0);
+        BitMap* freeMap=new BitMap(NumSectors);
+        freeMap->FetchFrom(freeMapFile);
+        if(!hdr->Extend(freeMap,position+numBytes-fileLength))
+            return 0;
+        hdr->WriteBack(hdr->mysector);
+        freeMap->WriteBack(freeMapFile);
+        delete freeMap;
+        delete freeMapFile;
+    }
+
+	   // numBytes = fileLength - position;
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
 
+    //printf("Writing %d bytes at %d,frome file of length %d.\n");
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
     numSectors = 1 + lastSector - firstSector;

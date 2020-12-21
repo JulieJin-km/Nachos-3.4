@@ -66,6 +66,7 @@ class FileHeader {
     void set_time_create();
     void set_time_last_visited();
     void set_time_last_modified();
+    bool Extend(BitMap *freeMap,int bytes);
 
   private:
     int numBytes;			// Number of bytes in the file
