@@ -50,6 +50,7 @@
 #include "directory.h"
 #include "filehdr.h"
 #include "filesys.h"
+#include "system.h"
 #include <string.h>
 
 // Sectors containing the file headers for the bitmap of free sectors,
@@ -397,6 +398,11 @@ FileSystem::Remove(char *name)
         delete current_openfile;
     }
 
+    if(synchDisk->cntVisitors[sector]>0){
+        printf("unable to delete this file, there are %d visitors\n",
+                synchDisk->cntVisitors[sector]);
+        return FALSE;
+    }
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
 

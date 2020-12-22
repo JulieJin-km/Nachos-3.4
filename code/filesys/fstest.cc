@@ -133,7 +133,9 @@ FileWrite()
 	return;
     }
     for (i = 0; i < FileSize; i += ContentSize) {
+        printf("%s begin write %d times\n",currentThread->getName(),i/ContentSize);
         numBytes = openFile->Write(Contents, ContentSize);
+        printf("%s end write %d times\n",currentThread->getName(),i/ContentSize);
 	if (numBytes < 10) {
 	    printf("Perf test: unable to write %s\n", FileName);
 	    delete openFile;
@@ -159,7 +161,9 @@ FileRead()
 	return;
     }
     for (i = 0; i < FileSize; i += ContentSize) {
+        printf("%s begin read %d times\n",currentThread->getName(),i/ContentSize);
         numBytes = openFile->Read(buffer, ContentSize);
+        printf("%s end read %d times\n",currentThread->getName(),i/ContentSize);
 	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
 	    printf("Perf test: unable to read %s\n", FileName);
 	    delete openFile;
@@ -185,3 +189,22 @@ PerformanceTest()
     stats->Print();
 }
 
+void 
+deletes(int which)
+{
+    printf("%s wants to remove the file\n",currentThread->getName());
+    //FileRead();
+    fileSystem->Remove(FileName);
+}
+
+void
+PerformanceTest1()
+{
+    printf("Starting file system performance test:\n");
+    FileWrite();
+    Thread *thread1=Thread::cap_Thread("reader1");
+    thread1->Fork(deletes,1);
+    FileRead();
+    printf("%s wants to remove the file\n",currentThread->getName());
+    fileSystem->Remove(FileName);
+}

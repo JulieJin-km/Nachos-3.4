@@ -45,6 +45,12 @@ SynchDisk::SynchDisk(char* name)
     semaphore = new Semaphore("synch disk", 0);
     lock = new Lock("synch disk lock");
     disk = new Disk(name, DiskRequestDone, (int) this);
+    for(int i=0;i<NumSectors;i++){
+        rwmutex[i]=new Semaphore("file",1);
+        numReaders[i]=0;
+        cntVisitors[i]=0;
+    }
+    readerLock=new Lock("readerLock");
 }
 
 //----------------------------------------------------------------------
@@ -58,6 +64,9 @@ SynchDisk::~SynchDisk()
     delete disk;
     delete lock;
     delete semaphore;
+    delete readerLock;
+    for(int i=0;i<NumSectors;i++)
+        delete rwmutex[i];
 }
 
 //----------------------------------------------------------------------
@@ -106,4 +115,37 @@ void
 SynchDisk::RequestDone()
 { 
     semaphore->V();
+}
+
+void
+SynchDisk::AddReader(int sector)
+{
+    readerLock->Acquire();
+    numReaders[sector]++;
+    if(numReaders[sector]==1)
+        rwmutex[sector]->P();
+    printf("reader count: %d\n",numReaders[sector]);
+    readerLock->Release();
+}
+
+void
+SynchDisk::SubReader(int sector)
+{
+    readerLock->Acquire();
+    numReaders[sector]--;
+    if(numReaders[sector]==0)
+        rwmutex[sector]->V();
+    printf("reader count: %d\n",numReaders[sector]);
+    readerLock->Release();
+}
+
+void
+SynchDisk::BeginWrite(int sector)
+{
+    rwmutex[sector]->P();
+}
+void 
+SynchDisk::EndWrite(int sector)
+{
+    rwmutex[sector]->V();
 }

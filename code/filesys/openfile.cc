@@ -34,6 +34,7 @@ OpenFile::OpenFile(int sector)
     seekPosition = 0;
     hdr->mysector=sector;
     //hdr->set_time_create();
+    synchDisk->cntVisitors[sector]++;
 }
 
 //----------------------------------------------------------------------
@@ -43,6 +44,7 @@ OpenFile::OpenFile(int sector)
 
 OpenFile::~OpenFile()
 {
+    synchDisk->cntVisitors[hdr->mysector]--;
     delete hdr;
 }
 
@@ -76,16 +78,22 @@ OpenFile::Seek(int position)
 int
 OpenFile::Read(char *into, int numBytes)
 {
+   synchDisk->AddReader(hdr->mysector);
    int result = ReadAt(into, numBytes, seekPosition);
+   currentThread->Yield();
    seekPosition += result;
+   synchDisk->SubReader(hdr->mysector);
    return result;
 }
 
 int
 OpenFile::Write(char *into, int numBytes)
 {
+   synchDisk->BeginWrite(hdr->mysector);
    int result = WriteAt(into, numBytes, seekPosition);
+   currentThread->Yield();
    seekPosition += result;
+   synchDisk->EndWrite(hdr->mysector);
    return result;
 }
 
