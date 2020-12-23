@@ -45,21 +45,45 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
-    if (freeMap->NumClear() < numSectors)
-	return FALSE;		// not enough space
+    //if (freeMap->NumClear() < numSectors)
+	//return FALSE;		// not enough space
     if(numSectors<=NumDirect-1){
-        for(int i=0;i<numSectors;i++)
-            dataSectors[i]=freeMap->Find();
+        if(freeMap->NumClear()<numSectors)
+            return FALSE;
+        int seq_free=freeMap->FindSeq(numSectors);
+        if(seq_free!=-1){
+            for(int i=0;i<numSectors;i++)
+                dataSectors[i]=seq_free+i;
+        }
+        else{
+            for(int i=0;i<numSectors;i++)
+                dataSectors[i]=freeMap->Find();
+        }
     }
     else{
-        for(int i=0;i<NumDirect-1;i++)
-            dataSectors[i]=freeMap->Find();
-        dataSectors[NumDirect-1]=freeMap->Find();
-        int indirectDataSectors[NumIndirect];
-        for(int i=0;i<numSectors-NumDirect+1;i++)
-            indirectDataSectors[i]=freeMap->Find();
-        freeMap->Print();
-        synchDisk->WriteSector(dataSectors[NumDirect-1],(char*)indirectDataSectors);
+        if(freeMap->NumClear()<numSectors+1)
+            return FALSE;
+        int seq_free=freeMap->FindSeq(numSectors);
+        if(seq_free!=-1){
+            int i;
+            for(i=0;i<NumDirect-1;i++)
+                dataSectors[i]=seq_free+i;
+            dataSectors[NumDirect-1]=freeMap->Find();
+            int indirectDataSectors[NumIndirect];
+            for(int j=0;j<numSectors-NumDirect+1;j++,i++)
+                indirectDataSectors[j]=seq_free+i;
+            synchDisk->WriteSector(dataSectors[NumDirect-1],(char*)indirectDataSectors);
+        }
+        else{ 
+            for(int i=0;i<NumDirect-1;i++)
+                dataSectors[i]=freeMap->Find();
+            dataSectors[NumDirect-1]=freeMap->Find();
+            int indirectDataSectors[NumIndirect];
+            for(int i=0;i<numSectors-NumDirect+1;i++)
+                indirectDataSectors[i]=freeMap->Find();
+            //freeMap->Print();
+            synchDisk->WriteSector(dataSectors[NumDirect-1],(char*)indirectDataSectors);
+        }
     }
 /*
     for (int i = 0; i < numSectors; i++)

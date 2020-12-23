@@ -24,6 +24,16 @@
 // This class provides the abstraction that for any individual thread
 // making a request, it waits around until the operation finishes before
 // returning.
+
+#define CacheNum 4
+class CacheEntry{
+    public:
+        int valid;
+        int dirty;
+        int sector;
+        int lru_time;
+        char data[SectorSize];
+};
 class SynchDisk {
   public:
     SynchDisk(char* name);    		// Initialize a synchronous disk,
@@ -46,7 +56,7 @@ class SynchDisk {
     void BeginWrite(int sector);
     void EndWrite(int sector);
     int cntVisitors[NumSectors];
-
+    CacheEntry *cache[CacheNum];
 
   private:
     Disk *disk;		  		// Raw disk device
