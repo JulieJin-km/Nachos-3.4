@@ -20,6 +20,7 @@
 #include "thread.h"
 #include "disk.h"
 #include "stats.h"
+#include <stdio.h>
 
 #define TransferSize 	10 	// make it small, just to be difficult
 
@@ -207,4 +208,42 @@ PerformanceTest1()
     FileRead();
     printf("%s wants to remove the file\n",currentThread->getName());
     fileSystem->Remove(FileName);
+}
+
+#define PIPE  "PIPE"
+#define MaxPipeSize SectorSize
+
+void
+PipeWrite(int which){
+    OpenFile *pipeFile=fileSystem->Open(PIPE);
+    char *buffer=new char[MaxPipeSize];
+    size_t size;
+    printf("input to %s :\n",PIPE);
+    getline(&buffer,&size,stdin);
+    pipeFile->Write(buffer,(int)size);
+    delete [] buffer;
+    delete pipeFile;
+}
+
+void
+PipeRead(int which){
+    OpenFile *pipeFile=fileSystem->Open(PIPE);
+    char *buffer=new char[MaxPipeSize];
+    pipeFile->Read(buffer,pipeFile->Length());
+    buffer[pipeFile->Length()]='\0';
+    printf("output from %s :\n%s\n",PIPE,buffer);
+    delete [] buffer;
+    delete pipeFile;
+}
+
+void 
+Pipe(){
+    if(!fileSystem->Create(PIPE,MaxPipeSize)){
+        printf("Perf test: can't create %s\n",PIPE);
+        return;
+    }
+    Thread * pipewrite=Thread::cap_Thread("pipewrite");
+    Thread * piperead=Thread::cap_Thread("piperead");
+    pipewrite->Fork(PipeWrite,0);
+    piperead->Fork(PipeRead,0);
 }

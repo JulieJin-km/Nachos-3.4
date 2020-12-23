@@ -98,7 +98,7 @@ SynchDisk::ReadSector(int sectorNumber, char* data)
         }
     }
     if(pos==-1){
-        printf("cache miss\n");
+        //printf("cache miss\n");
         disk->ReadRequest(sectorNumber,data);
         semaphore->P();
         int swap=-1;
@@ -126,7 +126,7 @@ SynchDisk::ReadSector(int sectorNumber, char* data)
         bcopy(data,cache[swap]->data,SectorSize);
     }
     else{
-        printf("cache hit\n");
+        //printf("cache hit\n");
         cache[pos]->lru_time=stats->totalTicks;
         bcopy(cache[pos]->data,data,SectorSize);
     }
