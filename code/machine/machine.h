@@ -147,6 +147,7 @@ class Machine {
     void DumpState();		// print the user CPU and memory state 
 
 
+    void PC_INC();
 // Data structures -- all of these are accessible to Nachos kernel code.
 // "public" for convenience.
 //

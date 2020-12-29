@@ -78,9 +78,11 @@ OpenFile::Seek(int position)
 int
 OpenFile::Read(char *into, int numBytes)
 {
+   printf("in Read\n");
    synchDisk->AddReader(hdr->mysector);
    int result = ReadAt(into, numBytes, seekPosition);
-   currentThread->Yield();
+   printf("result=%d\n",result);
+   //currentThread->Yield();
    seekPosition += result;
    synchDisk->SubReader(hdr->mysector);
    return result;
@@ -91,7 +93,7 @@ OpenFile::Write(char *into, int numBytes)
 {
    synchDisk->BeginWrite(hdr->mysector);
    int result = WriteAt(into, numBytes, seekPosition);
-   currentThread->Yield();
+   //currentThread->Yield();
    seekPosition += result;
    synchDisk->EndWrite(hdr->mysector);
    return result;

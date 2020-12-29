@@ -248,3 +248,11 @@ Machine::clear()
         }
     }
 }
+
+void 
+Machine::PC_INC()
+{
+    registers[PrevPCReg]=registers[PCReg];
+    registers[PCReg]=registers[NextPCReg];
+    registers[NextPCReg]=registers[NextPCReg]+4;
+}

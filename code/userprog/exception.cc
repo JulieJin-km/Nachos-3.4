@@ -67,19 +67,97 @@ ExceptionHandler(ExceptionType which)
             PageMissHandler();
         }
     }
+    else if((which==SyscallException)&&(type==SC_Create)){
+        printf("Syscall Create\n");
+        int addr=machine->ReadRegister(4);
+        char name[10];
+        int pos=0;
+        int buffer;
+        while(pos<10){
+            machine->ReadMem(addr+pos,1,&buffer);
+            if(buffer!=0)
+                name[pos++]=(char)buffer;
+            else{
+                name[pos]='\0';
+                break;
+            }
+        }
+        printf("name is %s\n",name);
+        fileSystem->Create(name,128);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Open)){
+        printf("Syscall Open\n");
+        int addr=machine->ReadRegister(4);
+        char name[10];
+        int pos=0;
+        int buffer;
+        while(pos<10){
+            machine->ReadMem(addr+pos,1,&buffer);
+            if(buffer!=0)
+                name[pos++]=(char)buffer;
+            else{
+                name[pos]='\0';
+                break;
+            }
+        }
+        printf("name is %s\n",name);
+        OpenFile *openfile=fileSystem->Open(name);
+        machine->WriteRegister(2,(int)openfile);
+        printf("fd is %d\n",(int)openfile);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Close)){
+        printf("Syscall Close\n");
+        int fd=machine->ReadRegister(4);
+        OpenFile *openfile=(OpenFile*)fd;
+        delete openfile;
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Write)){
+        printf("Syscall Write\n");
+        int bufferaddr=machine->ReadRegister(4);
+        int size=machine->ReadRegister(5);
+        int fd=machine->ReadRegister(6);
+        char buffer[size];
+        int data;
+        for(int i=0;i<size;i++){
+            machine->ReadMem(bufferaddr+i,1,&data);
+            buffer[i]=(char)data;
+        }
+        OpenFile *openfile=(OpenFile*)fd;
+        openfile->Write(buffer,size);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Read)){
+        printf("Syscall Read\n");
+        int bufferaddr=machine->ReadRegister(4);
+        int size=machine->ReadRegister(5);
+        int fd=machine->ReadRegister(6);
+        char buffer[size];
+        OpenFile *openfile=(OpenFile*)fd;
+        printf("size=%d,fd=%d\n",size,fd);
+        int curread=openfile->Read(buffer,size);
+        printf("current read is %d\n",curread);
+        for(int i=0;i<curread;i++){
+            machine->WriteMem(bufferaddr+i,1,int(buffer[i]));
+        }
+        machine->WriteRegister(2,curread);
+        machine->PC_INC();
+    }
     else if((which==SyscallException)&&(type==SC_Exit)){
         printf("program exit\n");
-        
-        int NextPC=machine->ReadRegister(NextPCReg);
-        machine->WriteRegister(PCReg,NextPC);
+        /*
         for(int i=0;i<machine->pageTableSize;i++){
             printf("physical page %d:",i);
             if(machine->pageTable[i].valid){
                 printf("page used, virtual page %d\n",machine->pageTable[i].virtualPage);
             }
             else printf("page unused\n");
-        }
+        }*/
         machine->clear();
+        machine->PC_INC();
+        currentThread->Finish();
     }
     else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
