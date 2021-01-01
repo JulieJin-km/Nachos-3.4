@@ -37,7 +37,7 @@ StartProcess(char *filename)
 	return;
     }
     printf("initial first thread address space\n");
-    space = new AddrSpace(executable);    
+    space = new AddrSpace(filename);    
     //printf("initial second thread address space\n");
     //space2=new AddrSpace(executable);
     currentThread->space = space;

@@ -35,13 +35,31 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: test1 halt shell matmult sort
+all: test1 halt shell matmult sort eye eye2 eye3
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
 	$(AS) $(ASFLAGS) -o start.o strt.s
 	rm strt.s
-    
+
+eye.o: eye.c
+	$(CC) $(CFLAGS) -c eye.c
+eye: eye.o start.o
+	$(LD) $(LDFLAGS) start.o eye.o -o eye.coff
+	../bin/coff2noff eye.coff eye
+
+eye2.o: eye2.c
+	$(CC) $(CFLAGS) -c eye2.c
+eye2: eye2.o start.o
+	$(LD) $(LDFLAGS) start.o eye2.o -o eye2.coff
+	../bin/coff2noff eye2.coff eye2
+   
+eye3.o: eye3.c
+	$(CC) $(CFLAGS) -c eye3.c
+eye3: eye3.o start.o
+	$(LD) $(LDFLAGS) start.o eye3.o -o eye3.coff
+	../bin/coff2noff eye3.coff eye3
+
 test1.o: test1.c
 	$(CC) $(CFLAGS) -c test1.c
 test1: test1.o start.o

@@ -196,7 +196,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     unsigned int pageFrame;
     //printf("in Translate:\n");
     
-    DEBUG('a', "\tTranslate 0x%x, %s: ", virtAddr, writing ? "write" : "read");
+    DEBUG('a', "\tTranslate 0x%x, %s: %d\n", virtAddr, writing ? "write" : "read",virtAddr);
 
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
@@ -212,10 +212,11 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 // from the virtual address
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
-    //printf("vpn is %d\n",vpn);
-    //for(int i=0;i<pageTableSize;i++)
-        //printf("pageTable[%d] valid:%d ",i,pageTable[i].valid);
-    //printf("\n");
+    DEBUG('a',"vpn is %d,offset is %d\n",vpn,offset);
+    for(int i=0;i<pageTableSize;i++)
+        if(pageTable[i].valid)
+        DEBUG('a',"pageTable[%d] valid:%d,virtualPage:%d,physicalPage:%d\n",i,pageTable[i].valid,pageTable[i].virtualPage,pageTable[i].physicalPage);
+    DEBUG('a',"\n");
     if (tlb == NULL) {		// => page table => vpn is index into table
 	if (vpn >= pageTableSize) {
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
@@ -236,7 +237,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
         for (entry = NULL, i = 0; i < TLBSize; i++)
     	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
 		entry = &tlb[i];			// FOUND!
-        //printf("find in tlb\n");
+        DEBUG('a',"find in tlb\n");
+        DEBUG('a',"virtualPage:%d,physicalPage:%d\n",tlb[i].virtualPage,tlb[i].physicalPage);
         hit++;
         total++;
         int p=counts[i];
@@ -273,6 +275,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	return ReadOnlyException;
     }
     pageFrame = entry->physicalPage;
+    DEBUG('a',"pageFrame is %d\n",pageFrame);
 
     // if the pageFrame is too big, there is something really wrong! 
     // An invalid translation was loaded into the page table or TLB. 

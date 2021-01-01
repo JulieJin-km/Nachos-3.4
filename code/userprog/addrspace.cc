@@ -60,11 +60,14 @@ SwapHeader (NoffHeader *noffH)
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
-AddrSpace::AddrSpace(OpenFile *executable)
+AddrSpace::AddrSpace(char *filename)
 {
     NoffHeader noffH;
     unsigned int i, size;
+    exeName=filename;
 
+    OpenFile* executable=fileSystem->Open(filename);
+    printf("in addrspace:%s\n",filename);
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) && 
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -91,7 +94,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 	pageTable[i].physicalPage = i;
     //pageTable[i].physicalPage=machine->find();
-	pageTable[i].valid = false;
+	pageTable[i].valid = FALSE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
@@ -101,7 +104,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+    //bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     fileSystem->Create("swapping_area",size);
@@ -115,6 +118,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
         char buffer;
         for(int j=0;j<noffH.code.size;j++){
          executable->ReadAt(&(buffer),1, codepo1++);
+         DEBUG('a',"codepo1 is %d,codepo2 is %d,buffer is %8.8x\n",codepo1,codepo2,buffer);
          openfile->WriteAt(&(buffer),1,codepo2++);
         }
     }
@@ -126,9 +130,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
         char buffer;
         for(int j=0;j<noffH.initData.size;j++){
         executable->ReadAt(&(buffer),1, datapo1++);
+        DEBUG('a',"datapo1 is %d,datapo2 is %d,buffer is %8.8x\n",datapo1,datapo2,buffer);
         openfile->WriteAt(&(buffer),1,datapo2++);
         }
     }
+    printf("in addrspace:size is %d\n",openfile->Length());
     delete openfile;
 
 }
@@ -201,4 +207,11 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = NumPhysPages;
+}
+
+void AddrSpace::Addrcpy(AddrSpace* space)
+{
+    for(int i=0;i<NumPhysPages;i++){
+        pageTable[i]=space->pageTable[i];
+    }
 }
