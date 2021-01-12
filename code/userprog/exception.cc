@@ -24,7 +24,10 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
-
+// #include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -208,6 +211,90 @@ ExceptionHandler(ExceptionType which)
         machine->clear();
         machine->PC_INC();
         currentThread->Finish();
+    }
+    else if((which==SyscallException)&&(type==SC_Pwd)){
+        printf("syscall pwd\n");
+        //system("pwd");
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Cd)){
+        printf("syscall cd\n");
+        int addr=machine->ReadRegister(4);
+        char name[20];
+        int pos=0;
+        int buffer;
+        while(1){
+            machine->ReadMem(addr+pos,1,&buffer);
+            if(buffer==0){
+                name[pos]='\0';
+                break;
+            }
+            name[pos++]=char(buffer);
+        }
+        chdir(name);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Remove)){
+        int addr=machine->ReadRegister(4);
+        char name[20];
+        int pos=0;
+        int buffer;
+        while(1){
+            machine->ReadMem(addr+pos,1,&buffer);
+            if(buffer==0){
+                name[pos]='\0';
+                break;
+            }
+            name[pos++]=char(buffer);
+        }
+        fileSystem->Remove(name);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_CreateDir)){
+        int addr=machine->ReadRegister(4);
+        char name[20];
+        int pos=0;
+        int buffer;
+        while(1){
+            machine->ReadMem(addr+pos,1,&buffer);
+            if(buffer==0){
+                name[pos]='\0';
+                break;
+            }
+            name[pos++]=char(buffer);
+        }
+        mkdir(name,0777);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_RemoveDir)){
+        int addr=machine->ReadRegister(4);
+        char name[20];
+        int pos=0;
+        int buffer;
+        while(1){
+            machine->ReadMem(addr+pos,1,&buffer);
+            if(buffer==0){
+                name[pos]='\0';
+                break;
+            }
+            name[pos++]=char(buffer);
+        }
+        rmdir(name);
+        machine->PC_INC();
+    }
+    else if((which==SyscallException)&&(type==SC_Help)){
+        printf("-----------------------------------------------\n");
+        printf("x [-userprog] : execute user programme\n");
+        printf("pwd : get current path\n");
+        printf("cd [-path] : change current path\n");
+        printf("nf [-file_name] : create new file\n");
+        printf("nd [-folder_name] : create new folder\n");
+        printf("df [-file_name] : delete a file\n");
+        printf("dd [-path] : delete a folder\n");
+        printf("h : print help information\n");
+        printf("q : leave the shell\n");
+        printf("----------------------------------------------\n");
+        machine->PC_INC();
     }
     else {
 	printf("Unexpected user mode exception %d %d\n", which, type);

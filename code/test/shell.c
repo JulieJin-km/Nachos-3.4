@@ -31,6 +31,30 @@ main()
 		    newProc = Exec(buffer+2);
 		    Join(newProc);
         }
+        else if(buffer[0]=='p'&&buffer[1]=='w'&&buffer[2]=='d'&&buffer[3]=='\0'){
+            Pwd();
+        }
+        else if(buffer[0]=='c'&&buffer[1]=='d'&&buffer[2]==' '){
+            Cd(buffer+3);
+        }
+        else if(buffer[0]=='n'&&buffer[1]=='f'&&buffer[2]==' '){
+            Create(buffer+3);
+        }
+        else if(buffer[0]=='d'&&buffer[1]=='f'&&buffer[2]==' '){
+            Remove(buffer+3);
+        }
+        else if(buffer[0]=='n'&&buffer[1]=='d'&&buffer[2]==' '){
+            CreateDir(buffer+3);
+        }
+        else if(buffer[0]=='d'&&buffer[1]=='d'&&buffer[2]==' '){
+            RemoveDir(buffer+3);
+        }
+        else if(buffer[0]=='h'&&buffer[1]=='\0'){
+            Help();
+        }
+        else if(buffer[0]=='q'&&buffer[1]=='\0'){
+            Exit(0);
+        }
 	}
     }
 }

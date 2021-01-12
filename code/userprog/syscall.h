@@ -29,6 +29,12 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
+#define SC_Pwd      11
+#define SC_Cd       12
+#define SC_Remove   13
+#define SC_CreateDir 14
+#define SC_RemoveDir 15
+#define SC_Help     16
 
 #ifndef IN_ASM
 
@@ -113,7 +119,6 @@ void Close(OpenFileId id);
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 
  */
-
 /* Fork a thread to run a procedure ("func") in the *same* address space 
  * as the current thread.
  */
@@ -122,8 +127,19 @@ void Fork(void (*func)());
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
-void Yield();		
+void Yield();	
 
+void Pwd();
+
+void Cd();
+
+void Remove();
+
+void CreateDir();
+
+void RemoveDir();
+
+void Help();
 #endif /* IN_ASM */
 
 #endif /* SYSCALL_H */
