@@ -127,8 +127,14 @@ ExceptionHandler(ExceptionType which)
             machine->ReadMem(bufferaddr+i,1,&data);
             buffer[i]=(char)data;
         }
-        OpenFile *openfile=(OpenFile*)fd;
-        openfile->Write(buffer,size);
+        if(fd==1){
+            for(int i=0;i<size;i++)
+                putchar(buffer[i]);
+        }
+        else{
+            OpenFile *openfile=(OpenFile*)fd;
+            openfile->Write(buffer,size);
+        }
         machine->PC_INC();
     }
     else if((which==SyscallException)&&(type==SC_Read)){
@@ -139,7 +145,14 @@ ExceptionHandler(ExceptionType which)
         char buffer[size];
         OpenFile *openfile=(OpenFile*)fd;
         printf("size=%d,fd=%d\n",size,fd);
-        int curread=openfile->Read(buffer,size);
+        int curread=0;
+        if(fd==0){
+            for(int i=0;i<size;i++,curread++)
+                buffer[i]=getchar();
+        }
+        else{
+            curread=openfile->Read(buffer,size);
+        }
         printf("current read is %d\n",curread);
         for(int i=0;i<curread;i++){
             machine->WriteMem(bufferaddr+i,1,int(buffer[i]));
