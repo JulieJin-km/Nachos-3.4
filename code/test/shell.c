@@ -27,8 +27,10 @@ main()
 	buffer[--i] = '\0';
 
 	if( i > 0 ) {
-		newProc = Exec(buffer);
-		Join(newProc);
+        if(buffer[0]=='x'&&buffer[1]==' '){
+		    newProc = Exec(buffer+2);
+		    Join(newProc);
+        }
 	}
     }
 }
